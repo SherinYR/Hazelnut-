@@ -36,4 +36,6 @@ The program is implemented in Python. User accounts are stored in an SQLite data
 the user logs in, navigates through the menu, selects a function, receives results or charts, and logs out when finished. 
 ## Expected Outcomes 
 At the end of the project, the result will be a functional command-line application that loads and analyzes the synthetic dataset, displays results, saves summaries, generates visualizations, and allows secure user login and administrative control. The program will be well-structured, documented, and suitable for educational use. 
+### Dataset Source
+https://www.kaggle.com/datasets/khushikyad001/synthetic-medical-symptoms-and-diagnosis-dataset
 
