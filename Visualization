@@ -1,0 +1,161 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+import os
+
+def create_visualizations(df):
+    """
+    Main function to generate all visualizations for Symptom Explorer.
+    Assumes df has symptom columns (0/1) and 'diagnosis' column.
+    """
+    print("Generating visualizations...")
+    
+    # Set style for better-looking plots
+    plt.style.use('default')
+    sns.set_palette("husl")
+    
+    # 1. TOP 10 DIAGNOSES BAR CHART
+    plt.figure(figsize=(12, 6))
+    diag_freq = df['diagnosis'].value_counts().head(10)
+    bars = plt.bar(range(len(diag_freq)), diag_freq.values, color='skyblue', edgecolor='navy')
+    plt.title('Top 10 Most Frequent Diagnoses', fontsize=16, fontweight='bold')
+    plt.xlabel('Diagnoses', fontsize=12)
+    plt.ylabel('Frequency', fontsize=12)
+    plt.xticks(range(len(diag_freq)), diag_freq.index, rotation=45, ha='right')
+    
+    # Add value labels on bars
+    for bar, value in zip(bars, diag_freq.values):
+        plt.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 0.5, 
+                str(value), ha='center', va='bottom', fontweight='bold')
+    
+    plt.tight_layout()
+    plt.savefig('diagnoses_frequency.png', dpi=300, bbox_inches='tight')
+    plt.show()
+    
+    # 2. TOP 10 SYMPTOMS BAR CHART (aggregate across all symptom columns)
+    symptom_cols = [col for col in df.columns if col != 'diagnosis']  # All symptom columns
+    symptom_sums = df[symptom_cols].sum().sort_values(ascending=False).head(10)
+    
+    plt.figure(figsize=(12, 6))
+    bars = plt.bar(range(len(symptom_sums)), symptom_sums.values, color='lightcoral', edgecolor='darkred')
+    plt.title('Top 10 Most Frequent Symptoms', fontsize=16, fontweight='bold')
+    plt.xlabel('Symptoms', fontsize=12)
+    plt.ylabel('Total Occurrences', fontsize=12)
+    plt.xticks(range(len(symptom_sums)), symptom_sums.index, rotation=45, ha='right')
+    
+    for bar, value in zip(bars, symptom_sums.values):
+        plt.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 10, 
+                str(value), ha='center', va='bottom', fontweight='bold')
+    
+    plt.tight_layout()
+    plt.savefig('symptoms_frequency.png', dpi=300, bbox_inches='tight')
+    plt.show()
+    
+    # 3. SYMPTOM-DIAGNOSIS HEATMAP (Top 8 symptoms x Top 8 diagnoses)
+    top_diags = df['diagnosis'].value_counts().head(8).index
+    top_symptoms = df[symptom_cols].sum().sort_values(ascending=False).head(8).index
+    
+    # Create co-occurrence matrix
+    co_matrix = pd.DataFrame(index=top_symptoms, columns=top_diags, dtype=int)
+    
+    for _, row in df.iterrows():
+        diag = row['diagnosis']
+        if diag in top_diags:
+            for sym in top_symptoms:
+                if row[sym] == 1:
+                    co_matrix.loc[sym, diag] = co_matrix.loc[sym, diag] + 1
+    
+    plt.figure(figsize=(12, 10))
+    sns.heatmap(co_matrix.fillna(0).astype(int), annot=True, fmt='d', cmap='YlOrRd', 
+                cbar_kws={'label': 'Co-occurrence Count'}, linewidths=0.5)
+    plt.title('Symptom-Diagnosis Co-occurrence Heatmap\n(Top 8 Symptoms x Top 8 Diagnoses)', 
+              fontsize=14, fontweight='bold', pad=20)
+    plt.xlabel('Diagnosis', fontsize=12)
+    plt.ylabel('Symptoms', fontsize=12)
+    plt.xticks(rotation=45, ha='right')
+    plt.yticks(rotation=0)
+    plt.tight_layout()
+    plt.savefig('symptom_diagnosis_heatmap.png', dpi=300, bbox_inches='tight')
+    plt.show()
+    
+    print("✅ Visualizations saved as:")
+    print("   - diagnoses_frequency.png")
+    print("   - symptoms_frequency.png") 
+    print("   - symptom_diagnosis_heatmap.png")
+
+# CLI INTEGRATION FUNCTION (call this from your main menu)
+def visualization_menu(df):
+    """Menu function to integrate with your CLI app"""
+    while True:
+        print("\n" + "="*50)
+        print("📊 VISUALIZATION TOOLS")
+        print("="*50)
+        print("1. Show Diagnosis Frequency Chart")
+        print("2. Show Symptom Frequency Chart") 
+        print("3. Show Symptom-Diagnosis Heatmap")
+        print("4. Generate All Visualizations")
+        print("5. Back to Main Menu")
+        print("-"*50)
+        
+        choice = input("Select option (1-5): ").strip()
+        
+        if choice == '1':
+            plt.figure(figsize=(12, 6))
+            diag_freq = df['diagnosis'].value_counts().head(10)
+            diag_freq.plot(kind='bar', color='skyblue', edgecolor='navy')
+            plt.title('Top 10 Diagnoses')
+            plt.xticks(rotation=45, ha='right')
+            plt.tight_layout()
+            plt.show()
+            
+        elif choice == '2':
+            symptom_cols = [col for col in df.columns if col != 'diagnosis']
+            symptom_sums = df[symptom_cols].sum().sort_values(ascending=False).head(10)
+            plt.figure(figsize=(12, 6))
+            symptom_sums.plot(kind='bar', color='lightcoral')
+            plt.title('Top 10 Symptoms')
+            plt.xticks(rotation=45, ha='right')
+            plt.tight_layout()
+            plt.show()
+            
+        elif choice == '3':
+            # Quick heatmap
+            symptom_cols = [col for col in df.columns if col != 'diagnosis']
+            top_symptoms = df[symptom_cols].sum().sort_values(ascending=False).head(8).index
+            top_diags = df['diagnosis'].value_counts().head(8).index
+            
+            co_matrix = pd.crosstab(df['diagnosis'], df[top_symptoms].sum(axis=1))
+            plt.figure(figsize=(10, 8))
+            sns.heatmap(co_matrix.head(8).T, annot=True, cmap='YlOrRd', fmt='d')
+            plt.title('Symptom-Diagnosis Relationships')
+            plt.tight_layout()
+            plt.show()
+            
+        elif choice == '4':
+            create_visualizations(df)
+            
+        elif choice == '5':
+            print("Returning to main menu...")
+            break
+            
+        else:
+            print("❌ Invalid choice! Please try again.")
+
+# USAGE EXAMPLE (for testing)
+if __name__ == "__main__":
+    # Load your dataset (replace with your actual CSV path)
+    print("Loading dataset for demo...")
+    # df = pd.read_csv('synthetic_medical_data.csv')  # Uncomment this line
+    
+    # For demo with random data:
+    demo_data = {
+        'diagnosis': ['Flu']*50 + ['COVID']*40 + ['Cold']*30 + ['Bronchitis']*20,
+        'fever': [1]*100 + [0]*40,
+        'cough': [1]*120 + [0]*20,
+        'fatigue': [1]*90 + [0]*50,
+        'headache': [1]*60 + [0]*80
+    }
+    df_demo = pd.DataFrame(demo_data)
+    
+    print("Demo dataset shape:", df_demo.shape)
+    visualization_menu(df_demo)
