@@ -1,0 +1,58 @@
+def about_screen(info: DatasetInfo) -> None:
+    print_header("Welcome to Symptom Explorer")
+    print(
+        f"""
+What this program is:
+- An educational tool that explores a synthetic medical symptom dataset.
+- It can summarize common symptoms and diagnoses, generate plots, and run a simple rule-based matcher.
+
+What it is NOT:
+- It is NOT medical advice, diagnosis, or treatment guidance.
+
+How it works:
+- The dataset contains a diagnosis column ("{info.diagnosis_col}") and symptom indicator columns.
+- Statistics and charts are computed from the dataset (symptom present if value > threshold).
+
+Navigation:
+- Choose menu numbers and press Enter.
+- Auto-logout after 60 minutes of inactivity.
+"""
+    )
+
+
+def help_page(role: str) -> None:
+    print_header("Help: Symptom Explorer")
+    print(
+        """
+Core features:
+1) Explore dataset
+   - View columns, preview rows, filter by diagnosis (list is shown).
+
+2) Statistics (Full summary)
+   - Asks only ONE question (show or save) then generates TWO charts:
+     - Top symptoms chart
+     - Top diagnoses chart
+
+3) Visualizations (user-driven)
+   - Choose top N, threshold, metric (count/proportion), and show or save.
+
+4) Symptom Checker (educational)
+   - Enter symptoms; program filters matching rows and shows most frequent diagnoses.
+
+Accounts & security:
+- Login or create an account inside the program.
+- Password rules:
+  - ≥ 8 characters
+  - at least 1 lowercase, 1 uppercase, 1 digit, 1 special character
+- Passwords stored securely using salted PBKDF2 hashing (not plaintext).
+
+Roles:
+- User:
+  - Explore, stats, visuals, checker, change own password
+- Admin:
+  - All user features + manage users (list/add/delete/reset password)
+
+Auto-logout:
+- Session ends after 60 minutes of inactivity.
+"""
+    )
