@@ -1,169 +1,158 @@
-# Models
+from typing_extensions import NoDefault
+import sqlite3
+import hashlib
+import secrets
+import re
+import os
 
-@dataclass(frozen=True)
-class User:
-    id: int
-    username: str
-    is_admin: bool
-
-
-@dataclass(frozen=True)
-class DatasetInfo:
-    diagnosis_col: str
-    symptom_cols: List[str]
-    non_symptom_cols: List[str]
-
-# Auth / Users (SQLite)
-
-def _connect(db_path: str) -> sqlite3.Connection:
-    conn = sqlite3.connect(db_path)
-    conn.row_factory = sqlite3.Row
-    return conn
+DB_FILE = "users.db"
 
 
-def _hash_password(password: str, salt: bytes, iterations: int = 200_000) -> bytes:
-    return hashlib.pbkdf2_hmac("sha256", password.encode("utf-8"), salt, iterations)
+# Password rules
 
-
-def validate_password_rules(password: str) -> Tuple[bool, str]:
-    """
-    Password rules:
-    - at least 8 characters
-    - at least 1 lowercase, 1 uppercase, 1 digit, 1 special char
-    """
-    if not isinstance(password, str):
-        return False, "Password must be text."
+def validate_password_rules(password: str):
     if len(password) < 8:
-        return False, "Password must be at least 8 characters."
+        return False, "At least 8 characters required"
     if not re.search(r"[a-z]", password):
-        return False, "Password must contain at least one lowercase letter."
+        return False, "Must contain lowercase letter"
     if not re.search(r"[A-Z]", password):
-        return False, "Password must contain at least one uppercase letter."
+        return False, "Must contain uppercase letter"
     if not re.search(r"\d", password):
-        return False, "Password must contain at least one digit."
+        return False, "Must contain a digit"
     if not re.search(r"[^\w\s]", password):
-        return False, "Password must contain at least one special character (e.g., !@#$%)."
+        return False, "Must contain special character"
     return True, "OK"
-def init_db(db_path: str) -> None:
-    os.makedirs(os.path.dirname(db_path), exist_ok=True)
 
-    with _connect(db_path) as conn:
-        conn.execute(
-            """
-            CREATE TABLE IF NOT EXISTS users (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                username TEXT UNIQUE NOT NULL,
-                salt BLOB NOT NULL,
-                pw_hash BLOB NOT NULL,
-                is_admin INTEGER NOT NULL DEFAULT 0,
-                created_at TEXT NOT NULL
-            )
-            """
+
+def hash_password(password: str, salt: bytes) -> bytes:
+    return hashlib.pbkdf2_hmac("sha256", password.encode(), salt, 200_000)
+
+
+#DB init (self-healing) 
+
+def init_db():
+    conn = sqlite3.connect(DB_FILE)
+    c = conn.cursor()
+
+    c.execute("""
+    CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT UNIQUE NOT NULL,
+        salt BLOB NOT NULL,
+        pw_hash BLOB NOT NULL,
+        is_admin INTEGER NOT NULL DEFAULT 0
+    )
+    """)
+    conn.commit()
+
+    # Seed admin (idempotent)
+    c.execute("SELECT username FROM users WHERE username='admin'")
+    if not c.fetchone():
+        salt = secrets.token_bytes(16)
+        pw_hash = hash_password("Admin123!", salt)
+        c.execute(
+            "INSERT INTO users (username, salt, pw_hash, is_admin) VALUES (?,?,?,1)",
+            ("admin", salt, pw_hash),
         )
-        conn.commit()
 
-    # Seed demo accounts (idempotent)
-    seeds = [
-        ("admin", "Admin123!", True),
-        ("student1", "Student123!", False),
-        ("student2", "Student123!", False),
-        ("guest", "Guest123!", False),
-    ]
-    for u, p, is_admin in seeds:
-        if get_user_by_username(u, db_path) is None:
-            create_user(u, p, is_admin=is_admin, db_path=db_path, enforce_rules=False)
-def get_user_by_username(username: str, db_path: str) -> Optional[User]:
-    username = (username or "").strip()
-    if not username:
-        return None
-    with _connect(db_path) as conn:
-        row = conn.execute(
-            "SELECT id, username, is_admin FROM users WHERE username=?",
-            (username,)
-        ).fetchone()
-        if not row:
-            return None
-        return User(id=int(row["id"]), username=row["username"], is_admin=bool(row["is_admin"]))
+    conn.commit()
+    conn.close()
 
 
-def list_users(db_path: str) -> List[Tuple[str, bool]]:
-    with _connect(db_path) as conn:
-        rows = conn.execute(
-            "SELECT username, is_admin FROM users ORDER BY is_admin DESC, username ASC"
-        ).fetchall()
-        return [(r["username"], bool(r["is_admin"])) for r in rows]
+# Signup
 
+def signup():
+    conn = sqlite3.connect(DB_FILE)
+    c = conn.cursor()
 
-def create_user(username: str, password: str, is_admin: bool, db_path: str, enforce_rules: bool = True) -> None:
-    username = (username or "").strip()
-    if not username:
-        raise ValueError("Username cannot be empty.")
-if enforce_rules:
-        ok, msg = validate_password_rules(password)
-        if not ok:
-            raise ValueError(msg)
+    print("\n=== Create Account ===")
+    username = input("Username: ").strip()
+
+    c.execute("SELECT username FROM users WHERE username=?", (username,))
+    if c.fetchone():
+        print("Username already exists")
+        conn.close()
+        return
+
+    password = input("Password: ")
+    ok, msg = validate_password_rules(password)
+    if not ok:
+        print(NoDefault, msg)
+        conn.close()
+        return
+
+    confirm = input("Confirm password: ")
+    if confirm != password:
+        print("Passwords do not match")
+        conn.close()
+        return
 
     salt = secrets.token_bytes(16)
-    pw_hash = _hash_password(password, salt)
+    pw_hash = hash_password(password, salt)
 
-    with _connect(db_path) as conn:
-        conn.execute(
-            "INSERT INTO users (username, salt, pw_hash, is_admin, created_at) VALUES (?, ?, ?, ?, datetime('now'))",
-            (username, salt, pw_hash, 1 if is_admin else 0),
-        )
-        conn.commit()
+    c.execute(
+        "INSERT INTO users (username, salt, pw_hash, is_admin) VALUES (?,?,?,0)",
+        (username, salt, pw_hash),
+    )
+    conn.commit()
+    conn.close()
 
-
-def delete_user(username: str, db_path: str) -> bool:
-    username = (username or "").strip()
-    if not username:
-        return False
-    with _connect(db_path) as conn:
-        cur = conn.execute("DELETE FROM users WHERE username=?", (username,))
-        conn.commit()
-        return cur.rowcount > 0
+    print("Account created successfully")
 
 
-def authenticate(username: str, password: str, db_path: str) -> Optional[User]:
-    username = (username or "").strip()
-    if not username:
-        return None
+#Login
 
-    with _connect(db_path) as conn:
-        row = conn.execute(
-            "SELECT id, username, salt, pw_hash, is_admin FROM users WHERE username=?",
-            (username,),
-        ).fetchone()
+def login():
+    conn = sqlite3.connect(DB_FILE)
+    c = conn.cursor()
+
+    print("\n=== Login ===")
+    username = input("Username: ").strip()
+    password = input("Password: ")
+
+    c.execute("SELECT salt, pw_hash, is_admin FROM users WHERE username=?", (username,))
+    row = c.fetchone()
+    conn.close()
 
     if not row:
+        print("Invalid username or password")
         return None
 
-    salt = row["salt"]
-    expected = row["pw_hash"]
-    candidate = _hash_password(password, salt)
+    salt, stored_hash, is_admin = row
+    candidate = hash_password(password, salt)
+    
+    print(f' Debug: {password}')
+    print(f' Debug: {candidate}')
 
-    if secrets.compare_digest(candidate, expected):
-        return User(id=int(row["id"]), username=row["username"], is_admin=bool(row["is_admin"]))
-    return None
+    if secrets.compare_digest(candidate, stored_hash):
+        print("Login successful")
+        print("Role:", "ADMIN" if is_admin else "USER")
+        return username, bool(is_admin)
+    else:
+        print("Invalid username or password")
+        return None
 
 
-def set_password(username: str, new_password: str, db_path: str) -> bool:
-    username = (username or "").strip()
-    if not username:
-        return False
+# Runner
 
-    ok, msg = validate_password_rules(new_password)
-    if not ok:
-        raise ValueError(msg)
+def run_login_demo():
+    init_db()
 
-    salt = secrets.token_bytes(16)
-    pw_hash = _hash_password(new_password, salt)
+    while True:
+        print("\n1) Login")
+        print("2) Create account")
+        print("3) Exit")
+        choice = input("Choose: ").strip()
 
-    with _connect(db_path) as conn:
-        cur = conn.execute(
-            "UPDATE users SET salt=?, pw_hash=? WHERE username=?",
-            (salt, pw_hash, username),
-        )
-        conn.commit()
-        return cur.rowcount > 0
+        if choice == "1":
+            login()
+        elif choice == "2":
+            signup()
+        elif choice == "3":
+            print("Goodbye")
+            break
+        else:
+            print("Invalid choice")
 
+
+run_login_demo()
