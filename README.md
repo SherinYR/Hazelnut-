@@ -41,18 +41,22 @@ https://www.kaggle.com/datasets/khushikyad001/synthetic-medical-symptoms-and-dia
 ### Group Details
 ## Group Name: Hazelnut
 ## Individual assignments: 
-#SeyedeMahsa MahdaviSadati : -Login Page ( Create account, Initiate database, Delete users, Data-base connection)
+# SeyedeMahsa MahdaviSadati : 
+                            -Login Page ( Create account, Initiate database, Delete users, Data-base connection)
                             -CLI menu realated loging, common area and explore menu, Help page
                             - App
-#Zahra Aghaei: - Symptom  Checker
+# Zahra Aghaei:
+              - Symptom  Checker
               - Symptom checker CLI 
               - Hash-password
               - Login Page : Set passwords + CLI menu related passwords 
-#Sherin Yassine Ramirez: - Statistics 
+# Sherin Yassine Ramirez: 
+                        - Statistics 
                         - Statistics CLI
                         - Data Handler
                         - Login Page: Authintication of user
-#Setayesh Moeini: - Visualization 
+# Setayesh Moeini:  
+                  - Visualization 
                   - Visualization CLI
                   - Login Page: User lists
                   
