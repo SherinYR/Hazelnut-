@@ -1,0 +1,327 @@
+% ai-usage-card.sty – v3.0  (2025‑06-01)
+% -------------------------------------------------------------------
+
+% -------------------------------------------------------------------
+% AI Usage Card – Usage Instructions
+% -------------------------------------------------------------------
+%
+% 1. Include the package in your document preamble:
+%
+%     \usepackage{ai-usage-card}
+%     % (Optional) Disable auto-citation:
+%     % \usepackage[noautocite]{ai-usage-card}
+%
+% 2. Populate the card fields in your preamble using the following commands:
+%
+%     % Project basics
+%     \aiProjectName{...}
+%     \aiDomain{...}
+%     \aiKeyApplication{...}
+%
+%     % Contact
+
+%
+%     % Models used
+%     \aiModels{chatGBT5.2, chatGPT5.1, ...}
+%
+
+%
+%     % Writing assistance
+%     \aiGeneratingText{...}
+%     \aiImprovingContent{command texts...}
+%     
+%
+%     % Coding assistance
+%     \aiGeneratingCode{debugging, hash-password, importing test functions..}
+%     \aiRefactoringCode{...}
+%     \aiComparingCode{...}
+%
+%     % Ethical considerations
+%     \aiWhyUse{...}
+%     \aiMitigateErrors{fix errors in running code...}
+%     \aiMinimizeHarm{...}
+%
+% 3. Inside your document body, where you want the card to appear, use:
+%     \begin{document}
+%     ...
+%     \makeAIUsageCard
+%     ...
+%     \end{document}
+% This command will render a full-width AI Usage Card with all filled-in fields.
+% Empty or undefined fields will be grayed out for transparency.
+%
+% For more, see: https://ai-cards.org
+%
+% -------------------------------------------------------------------
+
+
+\ProvidesPackage{ai-usage-card}[2025/05/30 v2.5 AI Usage Card package]
+
+% -------------------------------------------------------------------
+%                            REQUIREMENTS
+% -------------------------------------------------------------------
+\RequirePackage[breakable,most]{tcolorbox}
+\RequirePackage{float}
+\RequirePackage{xcolor}
+\RequirePackage{booktabs}
+\RequirePackage{longtable}
+\RequirePackage{array}
+\RequirePackage{etoolbox}
+\RequirePackage{hyperref}
+\RequirePackage{graphicx}
+\RequirePackage{qrcode}
+\RequirePackage{ragged2e}
+\RequirePackage{filecontents}
+\NeedsTeXFormat{LaTeX2e}
+
+% -------------------------------------------------------------------
+%                             COLORS
+% -------------------------------------------------------------------
+\definecolor{LightBlue}{HTML}{3389f8}
+
+% -------------------------------------------------------------------
+%                         USER‑FILLABLE FIELDS
+% -------------------------------------------------------------------
+% Project basics
+\newcommand{\aiProjectName}[1]{\gdef\@aiProjectName{#1}}
+\newcommand{\aiDomain}[1]{\gdef\@aiDomain{#1}}
+\newcommand{\aiKeyApplication}[1]{\gdef\@aiKeyApplication{#1}}
+% Contact
+\newcommand{\aiContactName}[1]{\gdef\@aiContactName{#1}}
+\newcommand{\aiContactEmail}[1]{\gdef\@aiContactEmail{#1}}
+\newcommand{\aiContactAffiliation}[1]{\gdef\@aiContactAffiliation{#1}}
+% Models
+\newcommand{\aiModels}[1]{\gdef\@aiModels{#1}}
+% Literature
+\newcommand{\aiFindingLiterature}[1]{\gdef\@aiFindingLiterature{#1}}
+\newcommand{\aiFindingExamples}[1]{\gdef\@aiFindingExamples{#1}}
+\newcommand{\aiComparingLiterature}[1]{\gdef\@aiComparingLiterature{#1}}
+% Writing
+\newcommand{\aiGeneratingText}[1]{\gdef\@aiGeneratingText{#1}}
+\newcommand{\aiImprovingContent}[1]{\gdef\@aiImprovingContent{#1}}
+\newcommand{\aiPerspectiveWork}[1]{\gdef\@aiPerspectiveWork{#1}}
+% Coding
+\newcommand{\aiGeneratingCode}[1]{\gdef\@aiGeneratingCode{#1}}
+\newcommand{\aiRefactoringCode}[1]{\gdef\@aiRefactoringCode{#1}}
+\newcommand{\aiComparingCode}[1]{\gdef\@aiComparingCode{#1}}
+% Ethics
+\newcommand{\aiWhyUse}[1]{\gdef\@aiWhyUse{#1}}
+\newcommand{\aiMitigateErrors}[1]{\gdef\@aiMitigateErrors{#1}}
+\newcommand{\aiMinimizeHarm}[1]{\gdef\@aiMinimizeHarm{#1}}
+
+% Initialize all fields as undefined (not empty strings)
+% This allows \ifdefempty to work correctly
+\let\@aiProjectName\undefined
+\let\@aiDomain\undefined
+\let\@aiKeyApplication\undefined
+\let\@aiContactName\undefined
+\let\@aiContactEmail\undefined
+\let\@aiContactAffiliation\undefined
+\let\@aiModels\undefined
+\let\@aiFindingLiterature\undefined
+\let\@aiFindingExamples\undefined
+\let\@aiComparingLiterature\undefined
+\let\@aiGeneratingText\undefined
+\let\@aiImprovingContent\undefined
+\let\@aiPerspectiveWork\undefined
+\let\@aiGeneratingCode\undefined
+\let\@aiRefactoringCode\undefined
+\let\@aiComparingCode\undefined
+\let\@aiWhyUse\undefined
+\let\@aiMitigateErrors\undefined
+\let\@aiMinimizeHarm\undefined
+
+% -------------------------------------------------------------------
+%                       Auto Citation
+% -------------------------------------------------------------------
+\newcommand*\ai@citekey{wahle2023aiusagecard}
+\newif\ifai@autocite
+\ai@autocitetrue                % default = on
+
+%% ---- user option to disable it ------------------------------------
+\DeclareOption{noautocite}{\ai@autocitefalse}
+\ProcessOptions\relax
+
+%% ---- write the .bib file using immediate write (fixed format) -----
+\IfFileExists{aiusagecard.bib}{}{%
+  \newwrite\ai@bibwrite \immediate\openout\ai@bibwrite=aiusagecard.bib \immediate\write\ai@bibwrite{@inproceedings{wahle2023aiusagecard,
+	title        = {AI Usage Cards: Responsibly Reporting AI-Generated Content},
+	author       = {J. Wahle and T. Ruas and S. M. Mohammad and N. Meuschke and B. Gipp},
+	year         = 2023,
+	month        = {jun},
+	booktitle    = {2023 ACM/IEEE Joint Conference on Digital Libraries (JCDL)},
+	publisher    = {IEEE Computer Society},
+	address      = {Los Alamitos, CA, USA},
+	volume       = {},
+	pages        = {282--284},
+	doi          = {10.1109/JCDL57899.2023.00060},
+	issn         = {},
+	url          = {https://doi.ieeecomputersociety.org/10.1109/JCDL57899.2023.00060},
+	abstract     = {There are growing concerns about the responsible use of content-generating AI systems. Current guidelines for using AI are specific to certain scenarios and not applicable to scientific research. We propose a three-dimensional model consisting of transparency, integrity, and accountability to define responsible AI use in science and introduce AI Usage Cards to report the use of AI in scientific research. Our model and reporting system promotes the ethical and responsible use of AI and provides a standardized approach for reporting AI across research fields. We also offer a free service to generate AI Usage Cards via a questionnaire at https://ai-cards.org.},
+	keywords     = {solid modeling;ethics;libraries;artificial intelligence;guidelines}}} \immediate\closeout\ai@bibwrite
+}
+
+
+%% ---- Simplified bibliography patching (no space trimming) ---------
+\newcommand*\ai@bibfile{aiusagecard}
+
+% Store original command
+\let\ai@origbibliography\bibliography
+
+% Simple string checking without zap@space
+\newcommand*\ai@checkifcontains[2]{%
+  \def\ai@found{false}%
+  \expandafter\ai@checkifcontains@aux\expandafter{#1}{#2}%
+}
+
+\newcommand*\ai@checkifcontains@aux[2]{%
+  \@for\ai@entry:=#1\do{%
+    \ifdefstring{\ai@entry}{#2}{\def\ai@found{true}}{}%
+  }%
+}
+
+% Enhanced bibliography patching without problematic space trimming
+\renewcommand*\bibliography[1]{%
+  \ifai@autocite
+    \ai@checkifcontains{#1}{\ai@bibfile}%
+    \ifdefstring{\ai@found}{true}{%
+      \ai@origbibliography{#1}%
+    }{%
+      \ai@origbibliography{#1,\ai@bibfile}%
+    }%
+  \else
+    \ai@origbibliography{#1}%
+  \fi
+}
+
+% Handle biblatex
+\AtBeginDocument{%
+  \ifai@autocite
+    \@ifpackageloaded{biblatex}{%
+      \addbibresource{aiusagecard.bib}%
+    }{}%
+  \fi
+}
+
+%% ---- Citation command ------------------------------------------
+\newcommand{\AIUsageCardCite}{%
+  \ifai@autocite
+    \cite{\ai@citekey}%
+  \else
+    \href{https://jpwahle.com/ai-cards-preprint}{PDF}%
+  \fi
+}
+
+
+% -------------------------------------------------------------------
+%                       FIELD RENDERING MACRO
+% -------------------------------------------------------------------
+\newcommand{\aiField}[2]{% #1 = label, #2 = value macro name (without backslash)
+  \begin{minipage}[t]{\linewidth}
+    \expandafter\ifx\csname #2\endcsname\relax% undefined
+      {\color{gray}\MakeUppercase{#1}}%
+    \else% defined - check if empty
+      \expandafter\ifblank\expandafter{\csname #2\endcsname}{% empty
+        {\color{gray}\MakeUppercase{#1}}%
+      }{% non-empty
+        {\color{LightBlue}\MakeUppercase{#1}}\\[0.2em]\csname #2\endcsname%
+      }%
+    \fi
+  \end{minipage}%
+}
+
+
+% -------------------------------------------------------------------
+%                       TABLE COLUMN WIDTHS
+% -------------------------------------------------------------------
+\newcolumntype{\R}{>{\RaggedRight\arraybackslash}p{.15\textwidth}}
+\newcolumntype{\C}{@{\hspace{.05\textwidth}}>{\RaggedRight\arraybackslash}p{.23\textwidth}}
+
+
+% -------------------------------------------------------------------
+%                    INTERNAL – THE CARD CONTENTS
+% -------------------------------------------------------------------
+\hyphenpenalty=10000
+\newcommand{\ai@CardBox}{%
+  {\sffamily
+    \centering
+    \tcbset{colback=white!10!white}
+    \begin{tcolorbox}[
+        title={\large \textbf{AI Usage Card} \hfill \makebox{\begin{minipage}{1.2cm}\centering\vspace{5pt}\qrcode[height=1cm]{https://ai-cards.org}\vspace{5pt}\end{minipage}}},
+        breakable,
+        boxrule=0.7pt,
+        width=\textwidth,
+        center,
+        %skin=bicolor,
+        before lower={\footnotesize{AI Usage Card v2.0 \hfill \url{https://ai-cards.org} \hfill \AIUsageCardCite{}}},
+        segmentation empty,
+        halign lower=center,
+        collower=black,
+        coltitle=black, % Keep title text black for contrast
+        colbacklower=gray!20, % Set footer background color
+        colbacktitle=gray!20  % Set header background color
+        ]
+   \vspace{-10pt}
+   \footnotesize
+   \setlength{\tabcolsep}{3pt}% reduced to prevent overflow
+   \begin{longtable}{\R\C\C\C}
+      % PROJECT DETAILS -------------------------------------------------
+   {\color{LightBlue}\MakeUppercase{Project Details}} &
+     \aiField{Project Name}{@aiProjectName} &
+     \aiField{Domain}{@aiDomain} &
+     \aiField{Key Application}{@aiKeyApplication}\\
+   % CONTACT ---------------------------------------------------------
+   {\color{LightBlue}\MakeUppercase{Contact(s)}} &
+     \aiField{Name(s)}{@aiContactName} &
+     \aiField{Email(s)}{@aiContactEmail} &
+     \aiField{Affiliation(s)}{@aiContactAffiliation}\\\\
+     \cmidrule{2-4}\\
+   % MODELS ----------------------------------------------------------
+   {\color{LightBlue}\MakeUppercase{Model(s)}} &
+     \multicolumn{3}{p{.75\textwidth}}{\aiField{Model Name(s)}{@aiModels}}\\\\
+     \cmidrule{1-4}\\
+   % LITERATURE ------------------------------------------------------
+   {\color{LightBlue}\MakeUppercase{Literature Review}} &
+     \aiField{Finding literature}{@aiFindingLiterature} &
+     \aiField{Finding examples from known literature or adding literature for existing statements}{@aiFindingExamples} &
+     \aiField{Comparing literature}{@aiComparingLiterature}\\\\
+     \cmidrule{2-4}\\
+   % WRITING ---------------------------------------------------------
+   {\color{LightBlue}\MakeUppercase{Writing}} &
+     \aiField{Generating new text based on instructions}{@aiGeneratingText} &
+     \aiField{Assisting in improving own content or paraphrasing related work}{@aiImprovingContent} &
+     \aiField{Putting other works in perspective}{@aiPerspectiveWork}\\\\
+     \cmidrule{2-4}\\
+   % CODING ----------------------------------------------------------
+   {\color{LightBlue}\MakeUppercase{Coding}} &
+     \aiField{Generating new code based on descriptions or existing code}{@aiGeneratingCode} &
+     \aiField{Refactoring and optimizing existing code}{@aiRefactoringCode} &
+     \aiField{Comparing aspects of existing code}{@aiComparingCode}\\\\
+     \cmidrule{1-4}\\
+   % ETHICS ----------------------------------------------------------
+   {\color{LightBlue}\MakeUppercase{Ethics}} &
+     \aiField{Why did we use AI for this project?}{@aiWhyUse} &
+     \aiField{What steps are we taking to mitigate errors of AI?}{@aiMitigateErrors} &
+     \aiField{What steps are we taking to minimize the chance of harm or inappropriate use of AI?}{@aiMinimizeHarm}\\\\
+     \cmidrule{1-4}
+   \end{longtable}
+   \medskip
+   \textbf{\color{LightBlue}\MakeUppercase{The corresponding authors verify and agree with the modifications or generations of their used AI‑generated content}}
+   \tcblower
+   \end{tcolorbox}%
+  }}
+
+% -------------------------------------------------------------------
+%                  PUBLIC COMMAND – FULL‑WIDTH CARD
+% -------------------------------------------------------------------
+\makeatletter
+\newcommand{\makeAIUsageCard}{%
+  \if@twocolumn
+    \clearpage\onecolumn
+    \ai@CardBox
+    \clearpage\twocolumn
+  \else
+    \ai@CardBox
+  \fi
+}
+\makeatother
