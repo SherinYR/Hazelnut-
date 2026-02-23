@@ -78,7 +78,7 @@ def create_visualizations(df):
     plt.savefig('symptom_diagnosis_heatmap.png', dpi=300, bbox_inches='tight')
     plt.show()
     
-    print("✅ Visualizations saved as:")
+    print("Visualizations saved as:")
     print("   - diagnoses_frequency.png")
     print("   - symptoms_frequency.png") 
     print("   - symptom_diagnosis_heatmap.png")
@@ -139,7 +139,7 @@ def visualization_menu(df):
             break
             
         else:
-            print("❌ Invalid choice! Please try again.")
+            print("Invalid choice! Please try again.")
 
 # USAGE EXAMPLE (for testing)
 if __name__ == "__main__":
