@@ -46,19 +46,19 @@ https://www.kaggle.com/datasets/khushikyad001/synthetic-medical-symptoms-and-dia
  CLI menu realated loging, common area and explore menu, Help page
  App
 ### Zahra Aghaei:
-   Symptom  Checker
-   Symptom checker CLI 
-   Hash-password
-   Login Page : Set passwords + CLI menu related passwords 
+   -Symptom  Checker
+   -Symptom checker CLI 
+   -Hash-password
+   -Login Page : Set passwords + CLI menu related passwords 
 ### Sherin Yassine Ramirez: 
-  Statistics 
-  Statistics CLI
-  Data Handler
-  Login Page: Authintication of user
+  -Statistics 
+  -Statistics CLI
+  -Data Handler
+  -Login Page: Authintication of user
 ### Setayesh Moeini:  
-  Visualization 
-  Visualization CLI
-  Login Page: User lists
+  -Visualization 
+  -Visualization CLI
+  -Login Page: User lists
                   
                       
 
