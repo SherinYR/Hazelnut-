@@ -38,8 +38,8 @@ the user logs in, navigates through the menu, selects a function, receives resul
 At the end of the project, the result will be a functional command-line application that loads and analyzes the synthetic dataset, displays results, saves summaries, generates visualizations, and allows secure user login and administrative control. The program will be well-structured, documented, and suitable for educational use. 
 # Dataset Source
 https://www.kaggle.com/datasets/khushikyad001/synthetic-medical-symptoms-and-diagnosis-dataset
-### Group Details
-## #Group Name: Hazelnut
+# Group Details
+## Group Name: Hazelnut
 ## Individual assignments: 
 ### SeyedeMahsa MahdaviSadati
  Login Page ( Create account, Initiate database, Delete users, Data-base connection)
